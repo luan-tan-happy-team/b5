@@ -509,7 +509,7 @@
 
             <div class="start-area">
               <button class="btn" id="startBtn">Bắt đầu trò chơi 🚀</button>
-              <button class="btn secondary" id="soundBtn">Thử âm thanh ting ting 🔊</button>
+              <button class="btn secondary" id="soundBtn">🔊 Nhạc: Bật</button>
             </div>
           </div>
 
@@ -553,6 +553,7 @@
     </section>
   </main>
 
+  <audio id="bgMusic" src="music.mp3" preload="auto" loop></audio>
   <script>
     const questions = [
       {
@@ -631,6 +632,8 @@
     const resultTitle = document.getElementById('resultTitle');
     const encourageText = document.getElementById('encourageText');
     const confettiBox = document.getElementById('confetti');
+    const bgMusic = document.getElementById('bgMusic');
+    bgMusic.volume = 0.35;
 
     let current = 0;
     let score = 0;
@@ -638,6 +641,17 @@
     let timerId = null;
     let answered = false;
     let audioCtx = null;
+    let musicEnabled = true;
+
+      async function startMusic() {
+        if (!musicEnabled) return;
+        try { bgMusic.loop = true; bgMusic.volume = 0.35; await bgMusic.play(); }
+        catch (err) { console.warn('Background music will start after user interaction.', err); }
+      }
+      function stopMusic() { bgMusic.pause(); }
+      function updateSoundButton() {
+        soundBtn.textContent = musicEnabled ? '🔊 Nhạc: Bật' : '🔇 Nhạc: Tắt';
+      }
 
     function ensureAudio() {
       const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -673,6 +687,9 @@
 
     function startGame() {
       ensureAudio();
+      musicEnabled = true;
+      updateSoundButton();
+      startMusic();
       current = 0;
       score = 0;
       intro.style.display = 'none';
@@ -772,6 +789,7 @@
 
     function finishGame() {
       clearInterval(timerId);
+      stopMusic();
       quiz.style.display = 'none';
       result.style.display = 'block';
       progress.style.width = '100%';
@@ -807,7 +825,17 @@
     startBtn.addEventListener('click', startGame);
     nextBtn.addEventListener('click', nextQuestion);
     restartBtn.addEventListener('click', startGame);
-    soundBtn.addEventListener('click', () => playTone('correct'));
+    soundBtn.addEventListener('click', () => {
+        ensureAudio();
+        musicEnabled = !musicEnabled;
+        updateSoundButton();
+        if (musicEnabled && quiz.style.display === 'block') startMusic(); else stopMusic();
+        if (musicEnabled) playTone('correct');
+      });
+     document.addEventListener('visibilitychange', () => {
+        if (document.hidden) stopMusic();
+        else if (musicEnabled && quiz.style.display === 'block') { ensureAudio(); startMusic(); }
+      });
   </script>
 </body>
 </html>
